@@ -8,11 +8,14 @@
 
 %% Load bus objects for model
 load measControlBus.mat;
+load pvData.mat;
+
+pvData = [time(1:end-49) irradiance(50:end)];
 
 %% Battery Charge/Discharge Values
 
 % Charge Conditions
-finalVoltage = 26;      % Desired Final Cell Voltage [V]
+finalVoltage = 30;      % Desired Final Cell Voltage [V]
 currentSat = 0.5;       % Current Saturation (Charge off) [A]
 maxChargeRate = 5;      % Constant Current Charge Rate [A]
 
@@ -20,12 +23,20 @@ maxChargeRate = 5;      % Constant Current Charge Rate [A]
 maxDischargeRate = -5;  % Maximum Discharge Rate [A]
 
 % Bus Regulation
-desiredBusVoltage = 24.45; % Desired DC bus voltage [V]
+% desiredBusVoltage = 24.45; % Desired DC bus voltage [V]
+desiredBusVoltage = 30; % Desired DC bus voltage [V]
+
 
 % Ambient Temperature
 ambientTemp = 20;       % Ambient Temperature [C]
 
 cellsInParallel = 4;
+
+% Charge deficit
+Qe_init = 3*cellsInParallel; %Ampere*hours
+
+% Ambient temperature
+T_init = 20 + 273.15; %K
 
 %% Lookup Table Breakpoints
 
@@ -139,12 +150,3 @@ cell_Cp_heat = cell_rho_Cp * cell_volume; %J/kg/K
 % Convective heat transfer coefficient
 % For natural convection this number should be in the range of 5 to 25
 h_conv = 5; %W/m^2/K
-
-
-%% Initial Conditions
-
-% Charge deficit
-Qe_init = 3*cellsInParallel; %Ampere*hours
-
-% Ambient temperature
-T_init = 20 + 273.15; %K
