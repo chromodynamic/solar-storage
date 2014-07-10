@@ -11,6 +11,7 @@ load measControlBus.mat;
 load pvData.mat;
 
 pvData = [time(1:end-49) irradiance(50:end)];
+loadData = [time(1:end-49) 115*sin(3.5/pvData(end,1)*pvData(:,1)-0.5)+150];
 
 %% Battery Charge/Discharge Values
 
@@ -30,7 +31,7 @@ desiredBusVoltage = 30; % Desired DC bus voltage [V]
 % Ambient Temperature
 ambientTemp = 20;       % Ambient Temperature [C]
 
-cellsInParallel = 4;
+cellsInParallel = 8;
 
 % Charge deficit
 Qe_init = 3*cellsInParallel; %Ampere*hours
