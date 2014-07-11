@@ -1,4 +1,11 @@
-% Initialization file for example battery model ssc_lithium_cell_2RC.mdl
+%% Load Parameters for Simulation
+
+%% Bus Objects
+% Bus structures for model use Simulink.Bus objects
+load measControlBus.mat;
+
+%% Li-ion Battery Parameters (Simscape model)
+% Initialization parameters for battery model ssc_lithium_cell_2RC.mdl
 % based on T. Huria, M. Ceraolo, J. Gazzarri, R. Jackey. "High Fidelity
 % Electrical Model with Thermal Dependence for Characterization and
 % Simulation of High Power Lithium Battery Cells," IEEE International
@@ -6,46 +13,11 @@
 %
 % Copyright 2012 The MathWorks, Inc.
 
-%% Load bus objects for model
-load measControlBus.mat;
-load pvData.mat;
-
-pvData = [time(1:end-49) irradiance(50:end)];
-
-%% Battery Charge/Discharge Values
-
-% Charge Conditions
-finalVoltage = 30;      % Desired Final Cell Voltage [V]
-currentSat = 0.5;       % Current Saturation (Charge off) [A]
-maxChargeRate = 5;      % Constant Current Charge Rate [A]
-
-% Discharge Conditions
-maxDischargeRate = -5;  % Maximum Discharge Rate [A]
-
-% Bus Regulation
-% desiredBusVoltage = 24.45; % Desired DC bus voltage [V]
-desiredBusVoltage = 30; % Desired DC bus voltage [V]
-
-
-% Ambient Temperature
-ambientTemp = 20;       % Ambient Temperature [C]
-
-cellsInParallel = 4;
-
-% Charge deficit
-Qe_init = 3*cellsInParallel; %Ampere*hours
-
-% Ambient temperature
-T_init = 20 + 273.15; %K
-
-%% Initialize 
-
-%% Lookup Table Breakpoints
-
+% Lookup Table Breakpoints
 SOC_LUT = [0 0.1 0.25 0.5 0.75 0.9 1]';
 Temperature_LUT = [-20 -15 -10 0 20 40] + 273.15;
 
-%% Em Branch Properties
+% Em Branch Properties
 % Battery capacity
 Capacity_LUT = [
     2.741  2.903  3.333  4.059  4.180  4.178
@@ -63,8 +35,7 @@ Em_LUT = [
     3.343  3.330  3.331  3.504  3.483  3.585
 ]; %Volts
 
-%% Terminal Resistance Properties
-
+% Terminal Resistance Properties
 % R0 resistance vs SOC rows and T columns
 R0_LUT = [
     0.0475  0.0304  0.0276  0.0148  0.0124  0.0019
@@ -76,8 +47,7 @@ R0_LUT = [
     0.0425  0.0270  0.0182  0.0130  0.0095  0.0211
     ]; %Ohms
 
-%% RC Branch 1 Properties
-
+% RC Branch 1 Properties
 % R1 Resistance vs SOC rows and T columns
 R1_LUT = [
     0.1124  0.0893  0.0963  0.0762  0.0686  0.0103
@@ -124,8 +94,7 @@ C2_LUT = [
     ]; %Farads
 
 
-%% Thermal Properties
-
+% Thermal Properties
 % Cell dimensions and sizes
 cell_thickness = 0.0084; %m
 cell_width = 0.215; %m
@@ -152,3 +121,28 @@ cell_Cp_heat = cell_rho_Cp * cell_volume; %J/kg/K
 % Convective heat transfer coefficient
 % For natural convection this number should be in the range of 5 to 25
 h_conv = 5; %W/m^2/K
+
+%% Photovoltaic panel parameters
+% Simulink implementation of an idividual solar cell. 
+% The cell is modelled as a parallel combination of a current source, an 
+% exponential diode and an internal resistance Rp, connected in series 
+% with a resistance Rs.
+% 
+% The cell output current is given by:
+
+% Ipv = Iph - Is * (exp((V + I*Rs)/(N*Vt)) - 1) - (V + I*Rs)/Rp
+
+% Number of cells in series
+Ncell = 100;
+
+% Short-circuit current, Isc (A)
+PVCellIsc = 7;
+
+% Open-crcuit voltage for single cell (V)
+PVCellVoc = 0.64;
+
+% Series resistence for single cell (ohms);
+PVCellRs = 0.001;
+
+% First-order time constant for simulation (algebraic loop)
+tau = 1e-4;
