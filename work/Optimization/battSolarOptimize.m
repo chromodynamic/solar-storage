@@ -16,7 +16,7 @@ Aeq = [eyeMat   eyeMat     zeroMat;
 beq = [d; Einit; zeros(N-1,1)];
 
 % Generate the objective function
-f = [(Cost*dt)' zeros(1,N) -ones(1,N)];
+f = [(Cost*dt)' zeros(1,N) zeros(1,N)];
 
 % Constraint equations
 A = [zeroMat    eyeMat      zeroMat; 

@@ -1,18 +1,30 @@
+% Parse Battery Results
 tsim = BatteryData.time;
-SOC = BatteryData.signals(1).values;
+SOC = BatteryData.signals(3).values;
 i_batt = BatteryData.signals(2).values;
-v_batt = BatteryData.signals(3).values;
-D = (1 + duty(:,2))/2;
+v_batt = BatteryData.signals(1).values;
 
-v_batt(tsim < 0.5) = NaN; % Remove transients
-D(tsim < 0.5) = NaN;
-i_batt(tsim < 0.5) = NaN; i_batt(1) = -15;
-chargeLogic(tsim < 0.5) = NaN;
+% Parse Power Converter Duty Cycles
+D_batt = (1 + duty.signals(1).values)/2;
+D_mppt = (1 + duty.signals(2).values)/2;
 
-tsim = tsim/60; % Conver to minutes
-switchCondition = find(chargeLogic == 0,1,'first');
-tswitch = tsim(switchCondition);
+% Parse power distributions
+P_load = PowerDist.signals.values(:,1);
+P_pv = PowerDist.signals.values(:,2);
+P_batt = PowerDist.signals.values(:,3);
+P_grid = PowerDist.signals.values(:,4);
 
+tsim = tsim/60; % Convert to minutes
+
+% Power allocation figure
+figure;
+plot(tsim,P_load,tsim,P_pv,tsim,P_batt,tsim,P_grid,'LineWidth',2); grid on;
+legend('Load','PV','Battery','Grid');
+xlabel('Time [min]');
+ylabel('Power [W]');
+
+% Battery/conveter cycles figure
+figure;
 subplot(2,2,1)
 plot(tsim,irradiance(:,2),'LineWidth',2); grid on;
 xlabel('Time [min]');
@@ -34,6 +46,7 @@ ylabel('State-of-charge [%]');
 xlabel('Time (min)');
 
 subplot(2,2,4)
-plot(tsim,D,'LineWidth',2); grid on;
+plot(tsim,D_batt,tsim,D_mppt,'LineWidth',2); grid on;
 ylabel('Duty Cycle [%]');
 xlabel('Time (min)');
+legend('Battery Duty','MPPT Duty');
