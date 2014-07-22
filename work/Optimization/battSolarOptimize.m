@@ -1,4 +1,4 @@
-function [Pgrid,Pbatt,Ebatt] = battSolarOptimize(N,dt,Ppv,Pload,Einit,Cost,batteryMinMax)
+function [Pgrid,Pbatt,Ebatt] = battSolarOptimize(N,dt,Ppv,Pload,Einit,Cost,FinalWeight,batteryMinMax)
 
 % Power offset - battery/grid make up the difference
 d = Pload - Ppv;
@@ -16,7 +16,7 @@ Aeq = [eyeMat   eyeMat     zeroMat;
 beq = [d; Einit; zeros(N-1,1)];
 
 % Generate the objective function
-f = [(Cost*dt)' zeros(1,N) zeros(1,N)];
+f = [(Cost*dt)' zeros(1,N) zeros(1,N-1) -50000];
 
 % Constraint equations
 A = [zeroMat    eyeMat      zeroMat; 
