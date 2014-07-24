@@ -2,7 +2,7 @@ clear all; close all;
 load pvData;
 
 numDays = 2;            % Number of consecutive days
-FinalWeight = 50000;    % Final weight on energy storage
+FinalWeight = 500;    % Final weight on energy storage
 timeOptimize = 5;       % Time step for optimization [min]
 timePred = 6;           % Predict ahead horizon [hours]
 
@@ -18,9 +18,10 @@ loadOffset = 3.5e4/loadFreq;
 
 clearPpv = pvEff*repmat(clearDay(2:stepAdjust:end),numDays,1);
 cloudyPpv = pvEff*repmat(cloudyDay(2:stepAdjust:end),numDays,1);
-loadData = repmat(100*(sin(loadFreq*time(2:stepAdjust:end) - loadOffset)+1)+50,numDays,1);
+loadData = 2*repmat(100*(sin(loadFreq*time(2:stepAdjust:end) - loadOffset)+1)+50,numDays,1);
 
-Ppv = clearPpv;
+Ppv = clearPpv;         % Expected forecast (clear day)
+Ppv_act = cloudyPpv;    % Actual forecast (cloudy)
 Pload = loadData;
 
 dt = timeOptimize*60;
@@ -39,14 +40,16 @@ batteryMinMax.Pmax = 150;
 
 % Generate cost values
 C = loadData;
+% C = 1000*ones(N,1);
 
-% Global optimial solution to cost optimization
+% Global optimial solution - expected weather
 [Pgrid,Pbatt,Ebatt] = battSolarOptimize(N,dt,Ppv,Pload,Einit,C,FinalWeight,batteryMinMax);
 
-Ppv = cloudyPpv;
+% Global optimial solution to cost optimization - actual weather
+[Pgrid_act,Pbatt_act,Ebatt_act] = battSolarOptimize(N,dt,Ppv_act,Pload,Einit,C,FinalWeight,batteryMinMax);
 
 % No energy storage - Grid only cost
-loadTot = Pload - Ppv;
+loadTot = Pload - Ppv_act;
 costGrid = cumsum(C.*loadTot*dt);
 
 % Horizon for "sliding" optimization
@@ -57,6 +60,7 @@ Ebatt_sim = zeros(N,3);
 Pbatt_sim = zeros(N,3);
 Pgrid_sim = zeros(N,3);
 
+% Initial conditions
 Ebatt_sim(1,:) = Einit*ones(1,3);
 Pbatt_sim(:,3) = Pbatt;
 
@@ -100,6 +104,13 @@ for i = 2:N,
     [~,P_slide,~] = battSolarOptimize(lenOpt,dt,Ppv_opt,Pload_opt,...
         Ebatt_sim(i-1,2),C_opt,FinalWeight,batteryMinMax);
     
+    % Check is value is 
+    if P_slide(1) > batteryMinMax.Pmax,
+        P_slide(1) = batteryMinMax.Pmax;
+    elseif P_slide(1) < batteryMinMax.Pmin,
+        P_slide(1) = batteryMinMax.Pmin;
+    end
+    
     Pbatt_sim(i,2) = P_slide(1); % Apply only the first step
         
   
@@ -110,13 +121,39 @@ for i = 2:N,
 end
 
 figure;
-subplot(3,1,1);
-plot(tvec,Ebatt); grid on;
+subplot(5,1,1);
+plot(tvec/3600,100*Ebatt_act/battEnergy,tvec/3600,100*Ebatt_sim/battEnergy); grid on;
+legend('Optimum (Pefect Knowledge)','Heuristic','Online Sliding Optimization','Offline (Imperfect knowledge)')
+xlabel('Time [hrs]');
+ylabel('State-of-charge [%]');
 
-subplot(3,1,2);
-plot(tvec,C); grid on;
+subplot(5,1,2);
+plot(tvec/3600,C); grid on;
+ylabel('Energy Cost [$ per J]');
+xlabel('Time [hrs]');
 
-subplot(3,1,3);
-plot(tvec,Ppv,tvec,Pbatt,tvec,Pgrid,tvec,Pload);
+subplot(5,1,3);
+plot(tvec/3600,Pbatt_act,tvec/3600,Pbatt_sim);
 grid on;
-legend('PV','Battery','Grid','Load')
+legend('Optimum (Pefect Knowledge)','Heuristic','Online Sliding Optimization','Offline (Imperfect knowledge)')
+xlabel('Time [hrs]');
+ylabel('Battery Power [W]');
+
+subplot(5,1,4);
+plot(tvec/3600,Pgrid_act,tvec/3600,Pgrid_sim);
+grid on;
+legend('Optimum (Pefect Knowledge)','Heuristic','Online Sliding Optimization','Offline (Imperfect knowledge)')
+xlabel('Time [hrs]');
+ylabel('Grid Power [W]');
+
+Cgrid_sim = Pgrid_sim;
+for i = 1:3,
+    Cgrid_sim(:,i) = cumsum(C.*Pgrid_sim(:,i)*dt);
+end
+
+subplot(5,1,5)
+plot(tvec/3600,cumsum(C.*Pgrid_act*dt),tvec/3600,Cgrid_sim,tvec/3600,costGrid);
+grid on;
+legend('Optimum (Pefect Knowledge)','Heuristic','Online Sliding Optimization','Offline (Imperfect knowledge)','No storage')
+xlabel('Time [hrs]');
+xlabel('Cost');

@@ -29,7 +29,8 @@ b = [batteryMinMax.Pmax*ones(N,1);
     -batteryMinMax.Emin*ones(N,1)];
 
 % Perform Linear programming optimization
-xopt = linprog(f,A,b,Aeq,beq);
+options = optimset('Display','none');
+xopt = linprog(f,A,b,Aeq,beq,[],[],[],options);
 
 % Parse optmization results
 if isempty(xopt),
