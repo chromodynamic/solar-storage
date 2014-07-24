@@ -32,6 +32,12 @@ b = [batteryMinMax.Pmax*ones(N,1);
 xopt = linprog(f,A,b,Aeq,beq);
 
 % Parse optmization results
-Pgrid = xopt(1:N);
-Pbatt = xopt(N+1:2*N);
-Ebatt = xopt(2*N+1:end);
+if isempty(xopt),
+    Pgrid = zeros(N,1);
+    Pbatt = zeros(N,1);
+    Ebatt = zeros(N,1);
+else
+    Pgrid = xopt(1:N);
+    Pbatt = xopt(N+1:2*N);
+    Ebatt = xopt(2*N+1:end);
+end
