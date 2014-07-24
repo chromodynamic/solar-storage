@@ -1,26 +1,30 @@
 clear all; close all;
 load pvData;
 
-numDays = 2;
-FinalWeight = 0;
+numDays = 2;            % Number of consecutive days
+FinalWeight = 50000;    % Final weight on energy storage
+timeOptimize = 5;       % Time step for optimization [min]
 
 % Battery parameters
 Vnominal = 25;  % Nominal terminal voltage [V]
-Qnominal = 4;   % Nominal charge [A-h]
+Qnominal = 50;   % Nominal charge [A-h]
 pvEff = 0.7;    % Irradiance to Power factor
 
 
+stepAdjust = (timeOptimize*60)/(time(2)-time(1));
+
 loadFreq = 2*pi/time(end);
-loadOffset = 3e4/loadFreq;
-clearPpv = pvEff*repmat(clearIrrad(2:end),numDays,1);
-cloudyPpv = pvEff*repmat(cloudyIrrad(2:end),numDays,1);
-loadData = repmat(100*(sin(loadFreq*time(2:end) - 3e4)+1),numDays,1);
+loadOffset = 3.5e4/loadFreq;
+
+clearPpv = pvEff*repmat(clearDay(2:stepAdjust:end),numDays,1);
+cloudyPpv = pvEff*repmat(cloudyDay(2:stepAdjust:end),numDays,1);
+loadData = repmat(100*(sin(loadFreq*time(2:stepAdjust:end) - loadOffset)+1)+50,numDays,1);
 
 Ppv = clearPpv;
 Pload = loadData;
 
-N = numDays*(numel(time)-1);
-dt = 300;
+dt = timeOptimize*60;
+N = numDays*(numel(time(1:stepAdjust:end))-1);
 tvec = (1:N)'*dt;
 
 % Energy constraints
@@ -33,17 +37,8 @@ batteryMinMax.Emin = 0.2*battEnergy;
 batteryMinMax.Pmin = -150;
 batteryMinMax.Pmax = 150;
 
-% Generate d = Ppv - Pload values
-% Ppv = 300*(sin(1.7/N*tvec+5)+1);
-% Ppv = 300*ones(N,1);
-% Pload = 200*ones(N,1);
-% Ppv = irradiance(2:end)*0.75;
-% Pload = 200*(sin(1.7/N*tvec+3.5)+1);
-
 % Generate cost values
 C = loadData;
-% C = 10*(sin(1.7/N*tvec+3.5)+5);
-% C = ones(N,1);
 
 [Pgrid,Pbatt,Ebatt] = battSolarOptimize(N,dt,Ppv,Pload,Einit,C,FinalWeight,batteryMinMax);
 
