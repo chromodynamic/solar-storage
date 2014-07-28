@@ -1,8 +1,8 @@
 clear all; close all;
 load pvData;
 
-numDays = 2;            % Number of consecutive days
-FinalWeight = 50000;    % Final weight on energy storage
+numDays = 1;            % Number of consecutive days
+FinalWeight = 500;    % Final weight on energy storage
 timeOptimize = 5;       % Time step for optimization [min]
 
 % Battery parameters
@@ -53,3 +53,10 @@ subplot(3,1,3);
 plot(tvec,Ppv,tvec,Pbatt,tvec,Pgrid,tvec,Pload);
 grid on;
 legend('PV','Battery','Grid','Load')
+
+
+optVec = zeros(N,1);
+optVec(Pbatt > 50) = -1; % Discharge values
+optVec(Pbatt < -50) = 1; % Charge values
+optVec(abs(Pbatt) < 50) = 0; % Disable values
+optVec = [tvec optVec];

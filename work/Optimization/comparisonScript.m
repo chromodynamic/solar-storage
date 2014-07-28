@@ -2,7 +2,7 @@ clear all; close all;
 load pvData;
 
 numDays = 2;            % Number of consecutive days
-FinalWeight = 500;    % Final weight on energy storage
+FinalWeight = 50;    % Final weight on energy storage
 timeOptimize = 5;       % Time step for optimization [min]
 timePred = 6;           % Predict ahead horizon [hours]
 
